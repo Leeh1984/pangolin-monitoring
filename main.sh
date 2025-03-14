@@ -1145,6 +1145,7 @@ analyze_traefik_logs() {
 
 run_health_check() {
     log_message "INFO" "Running health check"
+    local send_discord="${1:-0}"
     local status=0
     local report=""
 
@@ -1265,12 +1266,14 @@ run_health_check() {
         status=1
     fi
 
-    # Send health report to Discord if configured
-    if [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
-        local severity="warning"
-        [[ "$status" -eq 0 ]] && severity="success"
-        local title="Health Check Report"
-        send_discord_message "$title" "$report" "$severity" "" "Pangolin Health"
+    if [[ ($send_discord -eq 1) ]]; then
+        # Send health report to Discord if configured
+        if [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
+                local severity="warning"
+                [[ "$status" -eq 0 ]] && severity="success"
+                local title="Health Check Report"
+                send_discord_message "$title" "$report" "$severity" "" "Pangolin Health"
+        fi
     fi
 
     return $status
@@ -1390,9 +1393,16 @@ start_monitoring_foreground() {
     while true; do
         cycle_count=$((cycle_count + 1))
         local current_time=$(date +%s)
+        local is_heartbeat=0 # Initialize to false (0)
+
+        if [[ $cycle_count -eq 1 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        elif [[ $((cycle_count % (60 * 60 / CHECK_INTERVAL))) -eq 0 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        fi
         
         echo -e "\n${CYAN}[$(date)] Running health check (cycle #${cycle_count})${NC}"
-        run_health_check
+        run_health_check $is_heartbeat
         
         # Check for system updates (once every 24 hours)
         if [[ $cycle_count -eq 1 || $(( cycle_count % (24 * 60 / CHECK_INTERVAL) )) -eq 0 ]]; then
@@ -1411,7 +1421,7 @@ start_monitoring_foreground() {
         fi
         
         # Send heartbeat to Discord every 60 cycles
-        if [[ $cycle_count -eq 1 || $(( cycle_count % 60 )) -eq 0 ]]; then
+        if [[ $is_heartbeat -eq 1 ]]; then
             echo -e "\n${CYAN}Sending heartbeat message...${NC}"
             send_discord_message "Heartbeat" ":yellow_circle: Heartbeat: Pangolin Monitor is running" "info"
         fi
@@ -1442,9 +1452,17 @@ start_service_mode() {
     while true; do
         cycle_count=$((cycle_count + 1))
         local current_time=$(date +%s)
-        
+        local is_heartbeat=0 # Initialize to false (0)
+
+        if [[ $cycle_count -eq 1 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        elif [[ $((cycle_count % (60 * 60 / CHECK_INTERVAL))) -eq 0 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        fi
+    
+
         # Run health check silently
-        if ! run_health_check >/dev/null 2>&1; then
+        if ! run_health_check $is_heartbeat >/dev/null 2>&1; then
             log_message "WARNING" "Health check found issues"
         else
             log_message "INFO" "Health check completed successfully"
@@ -1466,7 +1484,7 @@ start_service_mode() {
         fi
         
         # Send heartbeat every hour
-        if [[ $cycle_count -eq 1 || $(( cycle_count % (60 * 60 / CHECK_INTERVAL) )) -eq 0 ]]; then
+        if [[ $is_heartbeat -eq 1 ]]; then
             log_message "INFO" "Sending hourly heartbeat"
             send_discord_message "Heartbeat" ":yellow_circle: Hourly System Heartbeat\n\nSystem is operational and monitoring services." "info"
         fi
