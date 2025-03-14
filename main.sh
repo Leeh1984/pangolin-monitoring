@@ -1449,9 +1449,9 @@ start_service_mode() {
         local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
         
         if [[ $is_heartbeat -eq 1 ]]; then
-            log_message "INFO" "Heartbeat ${is_heartbeat}"
+            log_message "INFO" "Heartbeat"
         else
-            log_message "INFO" "NOT Heartbeat ${is_heartbeat}"
+            log_message "INFO" "NOT Heartbeat"
         fi
 
         # Run health check silently
