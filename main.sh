@@ -1145,11 +1145,9 @@ analyze_traefik_logs() {
 
 run_health_check() {
     log_message "INFO" "Running health check"
-    local send_discord=$1:1
+    local send_discord="${1:-0}"
     local status=0
     local report=""
-    
-    log_message "INFO" "$send_discord"
 
     echo -e "${CYAN}=== Health Check ===${NC}"
     report+="=== Health Check ===\n\n"
@@ -1268,12 +1266,14 @@ run_health_check() {
         status=1
     fi
 
-    # Send health report to Discord if configured
-    if [[ $send_discord -eq 1 ]] && [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
-        local severity="warning"
-        [[ "$status" -eq 0 ]] && severity="success"
-        local title="Health Check Report"
-        send_discord_message "$title" "$report" "$severity" "" "Pangolin Health"
+    if [[ ($send_discord -eq 1) ]]; then
+        # Send health report to Discord if configured
+        if [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
+                local severity="warning"
+                [[ "$status" -eq 0 ]] && severity="success"
+                local title="Health Check Report"
+                send_discord_message "$title" "$report" "$severity" "" "Pangolin Health"
+        fi
     fi
 
     return $status
@@ -1393,7 +1393,13 @@ start_monitoring_foreground() {
     while true; do
         cycle_count=$((cycle_count + 1))
         local current_time=$(date +%s)
-        local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
+        local is_heartbeat=0 # Initialize to false (0)
+
+        if [[ $cycle_count -eq 1 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        elif [[ $((cycle_count % (60 * 60 / CHECK_INTERVAL))) -eq 0 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        fi
         
         echo -e "\n${CYAN}[$(date)] Running health check (cycle #${cycle_count})${NC}"
         run_health_check $is_heartbeat
@@ -1446,13 +1452,14 @@ start_service_mode() {
     while true; do
         cycle_count=$((cycle_count + 1))
         local current_time=$(date +%s)
-        local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
-        
-        if [[ $is_heartbeat -eq 1 ]]; then
-            log_message "INFO" "Heartbeat"
-        else
-            log_message "INFO" "NOT Heartbeat"
+        local is_heartbeat=0 # Initialize to false (0)
+
+        if [[ $cycle_count -eq 1 ]]; then
+          is_heartbeat=1 # Set to true (1)
+        elif [[ $((cycle_count % (60 * 60 / CHECK_INTERVAL))) -eq 0 ]]; then
+          is_heartbeat=1 # Set to true (1)
         fi
+    
 
         # Run health check silently
         if ! run_health_check $is_heartbeat >/dev/null 2>&1; then
