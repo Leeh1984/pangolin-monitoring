@@ -1145,7 +1145,7 @@ analyze_traefik_logs() {
 
 run_health_check() {
     log_message "INFO" "Running health check"
-    local send_discord="$1:-1"
+    local send_discord="$1:1"
     local status=0
     local report=""
 
