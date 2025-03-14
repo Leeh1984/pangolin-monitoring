@@ -1269,7 +1269,7 @@ run_health_check() {
     fi
 
     # Send health report to Discord if configured
-    if [[ "$send_discord" -eq 1 ]] && [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
+    if [[ $send_discord -eq 1 ]] && [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
         local severity="warning"
         [[ "$status" -eq 0 ]] && severity="success"
         local title="Health Check Report"
@@ -1448,7 +1448,7 @@ start_service_mode() {
         local current_time=$(date +%s)
         local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
         
-        if [[ "$is_heartbeat" -eq 1 ]]; then
+        if [[ $is_heartbeat -eq 1 ]]; then
             log_message "INFO" "Heartbeat ${is_heartbeat}"
         else
             log_message "INFO" "NOT Heartbeat ${is_heartbeat}"
