@@ -1448,7 +1448,11 @@ start_service_mode() {
         local current_time=$(date +%s)
         local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
         
-        log_message "INFO" "Is heartbeat $is_heartbeat"
+        if [[ "$is_heartbeat" -eq 1 ]]; then
+            log_message "INFO" "Heartbeat ${is_heartbeat}"
+        else
+            log_message "INFO" "NOT Heartbeat ${is_heartbeat}"
+        fi
 
         # Run health check silently
         if ! run_health_check "$is_heartbeat" >/dev/null 2>&1; then
