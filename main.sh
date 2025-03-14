@@ -1145,7 +1145,7 @@ analyze_traefik_logs() {
 
 run_health_check() {
     log_message "INFO" "Running health check"
-    local send_discord="${1:-0}"
+    local send_discord="${1:-1}"
     local status=0
     local report=""
 
@@ -1266,7 +1266,7 @@ run_health_check() {
         status=1
     fi
 
-    if [[ ($send_discord -eq 1) ]]; then
+    if [[ ($((send_discord + status)) -ge 1) ]]; then
         # Send health report to Discord if configured
         if [[ -n "$DISCORD_WEBHOOK" ]] && validate_discord_webhook "$DISCORD_WEBHOOK" >/dev/null; then
                 local severity="warning"
