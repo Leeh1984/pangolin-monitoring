@@ -1148,6 +1148,8 @@ run_health_check() {
     local send_discord="$1:1"
     local status=0
     local report=""
+    
+    log_message "INFO" "$send_discord"
 
     echo -e "${CYAN}=== Health Check ===${NC}"
     report+="=== Health Check ===\n\n"
