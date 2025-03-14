@@ -1396,7 +1396,7 @@ start_monitoring_foreground() {
         local is_heartbeat=$(( ($cycle_count -eq 1) || ((cycle_count % (60 * 60 / CHECK_INTERVAL)) -eq 0) ))
         
         echo -e "\n${CYAN}[$(date)] Running health check (cycle #${cycle_count})${NC}"
-        run_health_check "$is_heartbeat"
+        run_health_check $is_heartbeat
         
         # Check for system updates (once every 24 hours)
         if [[ $cycle_count -eq 1 || $(( cycle_count % (24 * 60 / CHECK_INTERVAL) )) -eq 0 ]]; then
@@ -1455,7 +1455,7 @@ start_service_mode() {
         fi
 
         # Run health check silently
-        if ! run_health_check "$is_heartbeat" >/dev/null 2>&1; then
+        if ! run_health_check $is_heartbeat >/dev/null 2>&1; then
             log_message "WARNING" "Health check found issues"
         else
             log_message "INFO" "Health check completed successfully"
